@@ -16,8 +16,14 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+
+from library_service import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path(
+        "api/book/",
+        include("book.urls", namespace="book"),
+    ),
 ]
