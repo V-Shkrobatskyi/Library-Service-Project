@@ -6,6 +6,7 @@ from borrowing.serializers import (
     BorrowingSerializer,
     BorrowingDetailSerializer,
     BorrowingListSerializer,
+    BorrowingCreateSerializer,
 )
 
 
@@ -15,8 +16,14 @@ class BorrowingViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_serializer_class(self):
+        if self.action == "create":
+            return BorrowingCreateSerializer
         if self.action == "retrieve":
             return BorrowingDetailSerializer
         if self.action == "list":
             return BorrowingListSerializer
         return BorrowingSerializer
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
