@@ -17,3 +17,8 @@ class Book(models.Model):
 
     def __str__(self):
         return f"{self.title} (author: {self.author}, daily fee: {self.daily_fee})"
+
+    def book_borrowing(self):
+        self.inventory -= 1
+        self.save()
+        return self
