@@ -26,3 +26,22 @@ class Borrowing(models.Model):
         book.inventory -= 1
         book.save()
 
+    @staticmethod
+    def validate_borrowing(inventory, error_to_raise) -> None:
+        if inventory == 0:
+            raise error_to_raise(
+                {"book": "You can't borrowing this book, its inventory is zero."}
+            )
+
+    def clean(self) -> None:
+        Borrowing.validate_borrowing(self.book.inventory, ValueError)
+
+    def save(self, *args, **kwargs) -> None:
+        self.clean()
+        return super().save(*args, **kwargs)
+
+    def return_book(self):
+        self.book.inventory += 1
+        self.book.save()
+        self.actual_return_date = datetime.today()
+        self.save()
