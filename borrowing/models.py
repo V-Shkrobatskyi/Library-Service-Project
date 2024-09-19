@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 
 from book.models import Book
@@ -16,3 +18,8 @@ class Borrowing(models.Model):
 
     def __str__(self):
         return f"{self.book} (user: {self.user}, borrow date: {self.borrow_date})"
+    @staticmethod
+    def book_borrowing(book):
+        book.inventory -= 1
+        book.save()
+
