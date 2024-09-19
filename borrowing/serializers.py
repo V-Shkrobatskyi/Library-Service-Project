@@ -5,20 +5,8 @@ from borrowing.models import Borrowing
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Borrowing
-        fields = (
-            "id",
-            "borrow_date",
-            "expected_return_date",
-            "actual_return_date",
-            "book",
-            "user",
-        )
-
-
-class BorrowingListSerializer(serializers.ModelSerializer):
-    book = serializers.CharField(read_only=True, source="book.__str__")
+    book = BookSerializer(read_only=True)
+    user = serializers.CharField(read_only=True, source="user.email")
 
     class Meta:
         model = Borrowing
@@ -30,47 +18,56 @@ class BorrowingListSerializer(serializers.ModelSerializer):
             "book",
             "user",
         )
+        read_only_fields = ("actual_return_date",)
 
 
-class BorrowingDetailSerializer(BorrowingSerializer):
-    book = BookSerializer(many=False)
-
+class BorrowingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Borrowing
         fields = (
             "id",
-            "borrow_date",
-            "expected_return_date",
-            "actual_return_date",
             "book",
-            "user",
-        )
-
-
-class BorrowingCreateSerializer(BorrowingSerializer):
-    class Meta:
-        model = Borrowing
-        fields = (
             "expected_return_date",
-            "book",
         )
 
     def validate(self, attrs):
         data = super(BorrowingCreateSerializer, self).validate(attrs)
-        book_obj = attrs["book"]
-        book_title = book_obj.title
-        book_inventory = book_obj.inventory
 
-        if book_inventory <= 0:
-            raise serializers.ValidationError(
-                f"You can't borrowing book '{book_title}'. It is not available."
-            )
+        Borrowing.validate_borrowing(
+            attrs["book"].inventory, serializers.ValidationError
+        )
 
         return data
 
     def create(self, validated_data):
-        book = validated_data.get("book")
-        book.book_borrowing()
+        book = validated_data["book"]
+        Borrowing.book_borrowing(book)
+
         borrowing = Borrowing.objects.create(**validated_data)
 
         return borrowing
+
+
+class BorrowingReturnSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Borrowing
+        fields = ("id",)
+
+    def validate(self, attrs):
+        data = super(BorrowingReturnSerializer, self).validate(attrs)
+        borrowing = self.instance
+        actual_return_date = borrowing.actual_return_date
+
+        if borrowing.actual_return_date:
+            raise serializers.ValidationError(
+                {
+                    f"Borrowing: {borrowing}": f"The borrowing already returned on {actual_return_date}."
+                }
+            )
+
+        return data
+
+    def update(self, instance, validated_data):
+        instance.return_book()
+
+        return instance

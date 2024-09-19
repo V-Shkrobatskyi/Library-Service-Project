@@ -1,27 +1,26 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
 
 from borrowing.models import Borrowing
 from borrowing.serializers import (
     BorrowingSerializer,
-    BorrowingDetailSerializer,
-    BorrowingListSerializer,
     BorrowingCreateSerializer,
+    BorrowingReturnSerializer,
 )
 
 
 class BorrowingViewSet(viewsets.ModelViewSet):
-    queryset = Borrowing.objects.all()
+    queryset = Borrowing.objects.all().select_related("book", "user")
     serializer_class = BorrowingSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_serializer_class(self):
         if self.action == "create":
             return BorrowingCreateSerializer
-        if self.action == "retrieve":
-            return BorrowingDetailSerializer
-        if self.action == "list":
-            return BorrowingListSerializer
+        if self.action == "return_borrowing":
+            return BorrowingReturnSerializer
         return BorrowingSerializer
 
     def get_queryset(self):
@@ -44,3 +43,20 @@ class BorrowingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(user=user)
+
+    @action(
+        detail=True,
+        methods=["POST"],
+        url_path="return",
+        permission_classes=[IsAdminUser],
+    )
+    def return_borrowing(self, request, pk=None):
+        borrowing = self.get_object()
+        serializer = BorrowingReturnSerializer(
+            borrowing,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
