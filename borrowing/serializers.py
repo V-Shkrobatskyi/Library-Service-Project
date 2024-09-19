@@ -40,8 +40,9 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        book = validated_data.get("book")
-        book.book_borrowing()
+        book = validated_data["book"]
+        Borrowing.book_borrowing(book)
+
         borrowing = Borrowing.objects.create(**validated_data)
 
         return borrowing
