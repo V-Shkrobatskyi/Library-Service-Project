@@ -10,7 +10,7 @@ This API can be used for create profiles, books add borrowing/return books.
 - [Run with Docker](#Run-with-Docker)
 - [Database structure](#Database-structure)
 
-### Features:
+## Features:
 
 - User registration and login with email
 - Manage books and books borrowing
@@ -37,7 +37,16 @@ This API can be used for create profiles, books add borrowing/return books.
    POSTGRES_USER="db user"
    POSTGRES_PASSWORD="user password"
    SECRET_key="django secret key"
+   TELEGRAM_BOT_TOKEN="Telegram bot token"
+   TELEGRAM_CHAT_ID="Telegram chat id"
    ```
+[How to get Telegram bot token](https://core.telegram.org/bots/features#botfather)
+
+How to get "Telegram chat id":
+- go to web telegram version
+- start new group and add your bot there
+- in group url "Telegram chat id" is after symbol #
+
 3. Run database migrations and start server:
     ```
     python manage.py makemigrations
