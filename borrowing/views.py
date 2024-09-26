@@ -9,6 +9,7 @@ from borrowing.serializers import (
     BorrowingCreateSerializer,
     BorrowingReturnSerializer,
 )
+from borrowing.helpers.telegram import send_message
 
 
 class BorrowingViewSet(viewsets.ModelViewSet):
@@ -42,7 +43,15 @@ class BorrowingViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(user=user)
+        borrowing = serializer.save(user=user)
+        message = (
+            f"New borrowing:\n"
+            f"book: {borrowing.book.title}\n"
+            f"user: {borrowing.user}\n"
+            f"borrow_date: {borrowing.borrow_date}\n"
+            f"expected_return_date: {borrowing.expected_return_date}"
+        )
+        send_message(message)
 
     @action(
         detail=True,
