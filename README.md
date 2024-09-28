@@ -1,7 +1,8 @@
 # Library-Service-Project
 
 Library Service Project designed to provide a management system for book borrowings. 
-This API can be used for create profiles, books add borrowing/return books.
+This API can be used to: create profiles, books add borrowing/return books, 
+getting automatic notification on telegram about borrowings.
 
 ## Table of Contents
 
@@ -36,9 +37,14 @@ This API can be used for create profiles, books add borrowing/return books.
    POSTGRES_NAME="db name"
    POSTGRES_USER="db user"
    POSTGRES_PASSWORD="user password"
+   
    SECRET_key="django secret key"
+   
    TELEGRAM_BOT_TOKEN="Telegram bot token"
    TELEGRAM_CHAT_ID="Telegram chat id"
+
+   CELERY_BROKER_URL=redis://redis:6379
+   CELERY_RESULT_BACKEND=redis://redis:6379
    ```
 [How to get Telegram bot token](https://core.telegram.org/bots/features#botfather)
 
