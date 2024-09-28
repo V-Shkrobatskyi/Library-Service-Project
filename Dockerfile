@@ -1,15 +1,15 @@
 FROM python:3.12.4-slim
 LABEL maintainer="vetali5700@gmail.com"
 
-ENV PYTHOUNNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-WORKDIR app/
+WORKDIR /app
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 COPY . .
-RUN mkdir -p /app/media/uploads
 
 RUN adduser \
     --disabled-password \
