@@ -5,7 +5,7 @@ from payment.models import Payment
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(source="borrowing.user")
+    user = serializers.CharField(source="borrowing.user", read_only=True)
 
     class Meta:
         model = Payment
@@ -22,7 +22,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 class PaymentDetailSerializer(serializers.ModelSerializer):
-    borrowing = BorrowingSerializer()
+    borrowing = BorrowingSerializer(read_only=True)
 
     class Meta:
         model = Payment
