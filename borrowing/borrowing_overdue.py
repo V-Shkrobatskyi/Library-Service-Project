@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from borrowing.models import Borrowing
-from borrowing.helpers.telegram import send_message
+from borrowing.telegram_notifications import send_message
 
 
 def check_borrowings_overdue() -> None | str:
