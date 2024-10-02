@@ -9,7 +9,7 @@ from borrowing.serializers import (
     BorrowingCreateSerializer,
     BorrowingReturnSerializer,
 )
-from borrowing.helpers.telegram import send_message
+from borrowing.telegram_notifications import send_message
 
 
 class BorrowingViewSet(viewsets.ModelViewSet):
