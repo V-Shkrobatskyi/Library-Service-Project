@@ -47,6 +47,8 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         Borrowing.book_borrowing(book)
 
         borrowing = Borrowing.objects.create(**validated_data)
+        request = self.context.get("request")
+        create_stripe_session(borrowing, request)
 
         return borrowing
 
