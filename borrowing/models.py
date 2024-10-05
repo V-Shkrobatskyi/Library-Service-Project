@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from django.db import models
 
@@ -22,7 +23,7 @@ class Borrowing(models.Model):
         return f"Borrowing book {self.book.title} by user {self.user} on {self.borrow_date})"
 
     @staticmethod
-    def book_borrowing(book):
+    def book_borrowing(book) -> None:
         book.inventory -= 1
         book.save()
 
@@ -40,8 +41,19 @@ class Borrowing(models.Model):
         self.clean()
         return super().save(*args, **kwargs)
 
-    def return_book(self):
+    def return_book(self) -> None:
         self.book.inventory += 1
         self.book.save()
         self.actual_return_date = datetime.today()
         self.save()
+
+    def get_borrowing_days(self) -> Decimal:
+        last_date = self.expected_return_date.date()
+        first_date = self.borrow_date.date()
+
+        borrowing_days = (last_date - first_date).days
+
+        return borrowing_days
+
+    def get_price(self) -> Decimal:
+        return self.get_borrowing_days() * self.book.daily_fee
