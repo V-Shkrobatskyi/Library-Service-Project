@@ -1,7 +1,9 @@
+from django.db.transaction import atomic
 from rest_framework import serializers
 
 from book.serializers import BookSerializer
 from borrowing.models import Borrowing
+from payment.stripe_payment import create_stripe_session
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
@@ -39,6 +41,7 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
 
         return data
 
+    @atomic
     def create(self, validated_data):
         book = validated_data["book"]
         Borrowing.book_borrowing(book)
