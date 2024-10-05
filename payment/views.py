@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
 from payment.models import Payment
@@ -21,7 +22,15 @@ class PaymentViewSet(viewsets.ModelViewSet):
         return self.queryset
 
     def get_serializer_class(self):
-        if self.action == "retrieve":
+        if self.action in ("retrieve", "success"):
             return PaymentDetailSerializer
 
         return PaymentSerializer
+
+    @action(methods=["GET"], url_path="success", detail=False)
+    def success(self, request, session_id=None):
+        pass
+
+    @action(methods=["GET"], url_path="cancel", detail=False)
+    def cancel(self, request):
+        pass
