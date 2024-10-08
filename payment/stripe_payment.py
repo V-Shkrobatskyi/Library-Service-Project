@@ -15,12 +15,8 @@ def create_stripe_session(
 ) -> stripe.checkout.Session:
     price = borrowing.get_price()
     borrowing_days = borrowing.get_borrowing_days()
-    success_url = request.build_absolute_uri(
-        reverse("payment:payment-success", args=[borrowing.id])
-    )
-    cancel_url = request.build_absolute_uri(
-        reverse("payment:payment-cancel", args=[borrowing.id])
-    )
+    success_url = request.build_absolute_uri(reverse("payment:payment-success"))
+    cancel_url = request.build_absolute_uri(reverse("payment:payment-cancel"))
 
     session = stripe.checkout.Session.create(
         line_items=[
@@ -39,7 +35,7 @@ def create_stripe_session(
             }
         ],
         mode="payment",
-        success_url=success_url,
+        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
         cancel_url=cancel_url,
     )
 
