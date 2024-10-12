@@ -7,6 +7,9 @@ from book.models import Book
 from library_service import settings
 
 
+FINE_MULTIPLIER = 2
+
+
 class Borrowing(models.Model):
     borrow_date = models.DateTimeField(auto_now_add=True)
     expected_return_date = models.DateTimeField()
@@ -47,13 +50,23 @@ class Borrowing(models.Model):
         self.actual_return_date = datetime.today()
         self.save()
 
-    def get_borrowing_days(self) -> Decimal:
+    def get_borrowing_days(self) -> int:
         last_date = self.expected_return_date.date()
         first_date = self.borrow_date.date()
 
-        borrowing_days = (last_date - first_date).days
-
-        return borrowing_days
+        return (last_date - first_date).days
 
     def get_price(self) -> Decimal:
         return self.get_borrowing_days() * self.book.daily_fee
+
+    def get_overdue_days(self) -> int:
+        actual_return_date = self.actual_return_date.date()
+        expected_return_date = self.expected_return_date.date()
+
+        return (actual_return_date - expected_return_date).days
+
+    def get_overdue_price(self) -> Decimal:
+        daily_fee = self.book.daily_fee
+        fine_multiplier = Decimal(FINE_MULTIPLIER)
+
+        return self.get_overdue_days() * daily_fee * fine_multiplier
