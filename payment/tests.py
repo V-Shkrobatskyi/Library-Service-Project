@@ -1,4 +1,4 @@
-from datetime import timedelta, date
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
@@ -88,7 +88,7 @@ class AuthenticatedUserPaymentTestView(TestCase):
         book = sample_book()
         payload = {
             "book": book.id,
-            "expected_return_date": date.today() + timedelta(days=1),
+            "expected_return_date": datetime.today() + timedelta(days=1),
         }
         res = self.client.post(BORROWING_URL, payload)
 

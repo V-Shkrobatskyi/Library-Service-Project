@@ -1,14 +1,17 @@
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from freezegun import freeze_time
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
-from borrowing.models import Borrowing
+from borrowing.models import Borrowing, FINE_MULTIPLIER
 from borrowing.serializers import BorrowingSerializer
 from book.tests import sample_book
+from payment.models import Payment
 
 BORROWING_URL = reverse("borrowing:borrowing-list")
 
@@ -99,6 +102,18 @@ class AuthenticatedBorrowingApiTests(TestCase):
 
         self.assertEqual(book_inventory, 9)
 
+    def test_auth_borrowing_increase_inventory_on_return(self):
+        borrowing = sample_borrowing(user=self.auth_user)  # "inventory": 10
+        return_url = reverse(
+            "borrowing:borrowing-return-borrowing", args=[borrowing.id]
+        )
+
+        res = self.client.post(return_url)
+        book_inventory = Borrowing.objects.get(id=borrowing.id).book.inventory
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(book_inventory, 11)
+
     def test_auth_other_user_borrowing_detail(self):
         borrowing = sample_borrowing(user=self.user)
 
@@ -106,6 +121,40 @@ class AuthenticatedBorrowingApiTests(TestCase):
         res = self.client.get(url)
 
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_auth_user_fine_payment_for_book_overdue(self):
+        # expected_return_date = 14, actual_return_date 17, overdue_days = 3
+        borrowing = sample_borrowing(user=self.auth_user)
+        return_url = reverse(
+            "borrowing:borrowing-return-borrowing", args=[borrowing.id]
+        )
+
+        with freeze_time(datetime.today() + timedelta(days=17)):
+            res = self.client.post(return_url)
+
+            updated_borrowing = Borrowing.objects.get(id=borrowing.id)
+            payment = Payment.objects.get(
+                borrowing=updated_borrowing.id, type=Payment.TypeChoices.FINE
+            )
+            overdue_days = (
+                updated_borrowing.actual_return_date.date()
+                - updated_borrowing.expected_return_date.date()
+            ).days
+            overdue_price = (
+                overdue_days
+                * updated_borrowing.book.daily_fee
+                * Decimal(FINE_MULTIPLIER)
+            )
+
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+            self.assertEqual(
+                updated_borrowing.actual_return_date.date(),
+                updated_borrowing.expected_return_date.date() + timedelta(days=3),
+            )
+            self.assertEqual(
+                payment.money_to_pay,
+                overdue_price,
+            )
 
 
 class AdminBorrowingTestVew(TestCase):
@@ -136,15 +185,3 @@ class AdminBorrowingTestVew(TestCase):
         res = self.client.get(url)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-    def test_admin_borrowing_increase_inventory_on_return(self):
-        borrowing = sample_borrowing(user=self.user)  # "inventory": 10
-        return_url = reverse(
-            "borrowing:borrowing-return-borrowing", args=[borrowing.id]
-        )
-
-        res = self.client.post(return_url)
-        book_inventory = Borrowing.objects.get(id=borrowing.id).book.inventory
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(book_inventory, 11)
