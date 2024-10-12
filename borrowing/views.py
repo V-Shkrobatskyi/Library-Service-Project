@@ -1,6 +1,7 @@
+from django.db.transaction import atomic
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from borrowing.models import Borrowing
@@ -9,7 +10,6 @@ from borrowing.serializers import (
     BorrowingCreateSerializer,
     BorrowingReturnSerializer,
 )
-from borrowing.telegram_notifications import send_message
 
 
 class BorrowingViewSet(viewsets.ModelViewSet):
@@ -49,13 +49,14 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=["POST"],
         url_path="return",
-        permission_classes=[IsAdminUser],
     )
+    @atomic
     def return_borrowing(self, request, pk=None):
         borrowing = self.get_object()
         serializer = BorrowingReturnSerializer(
             borrowing,
             data=request.data,
+            context={"request": request},
             partial=True,
         )
         serializer.is_valid(raise_exception=True)
