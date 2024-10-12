@@ -82,7 +82,18 @@ class BorrowingReturnSerializer(serializers.ModelSerializer):
 
         return data
 
+    @atomic
     def update(self, instance, validated_data):
         instance.return_book()
+
+        if instance.actual_return_date.date() > instance.expected_return_date.date():
+            request = self.context["request"]
+
+            overdue_days = instance.get_overdue_days()
+            overdue_price = instance.get_overdue_price()
+
+            create_stripe_session(
+                instance, request, Payment.TypeChoices.FINE, overdue_price, overdue_days
+            )
 
         return instance
