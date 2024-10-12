@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from book.serializers import BookSerializer
 from borrowing.models import Borrowing
+from payment.models import Payment
 from payment.stripe_payment import create_stripe_session
 
 
@@ -48,7 +49,16 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
 
         borrowing = Borrowing.objects.create(**validated_data)
         request = self.context.get("request")
-        create_stripe_session(borrowing, request)
+        borrowing_days = borrowing.get_borrowing_days()
+        borrowing_price = borrowing.get_price()
+
+        create_stripe_session(
+            borrowing,
+            request,
+            Payment.TypeChoices.PAYMENT,
+            borrowing_price,
+            borrowing_days,
+        )
 
         return borrowing
 
