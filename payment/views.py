@@ -14,7 +14,7 @@ from payment.serializers import (
 )
 
 
-class PaymentViewSet(viewsets.ModelViewSet):
+class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Payment.objects.select_related("borrowing")
     permission_classes = (IsAuthenticated,)
 
@@ -72,5 +72,5 @@ class PaymentViewSet(viewsets.ModelViewSet):
     @action(methods=["GET"], url_path="cancel", detail=False)
     def cancel(self, request):
         raise ValidationError(
-            "Payment can be paid a bit later (but the session is available for only 24h)"
+            "Payment can be paid a bit later, but the session is available for only 24h."
         )
