@@ -1,4 +1,5 @@
 import stripe
+from django.db.transaction import atomic
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -6,12 +7,14 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from borrowing.serializers import BorrowingSerializer
 from payment.models import Payment
 from payment.serializers import (
     PaymentSerializer,
     PaymentDetailSerializer,
     PaymentSuccessSerializer,
 )
+from payment.stripe_payment import create_stripe_session
 
 
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -73,4 +76,49 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
     def cancel(self, request):
         raise ValidationError(
             "Payment can be paid a bit later, but the session is available for only 24h."
+        )
+
+    @action(
+        detail=False,
+        methods=["GET"],
+        url_path="renew",
+    )
+    @atomic
+    def renew_session(self, request, pk=None):
+        user = request.user
+        payment = Payment.objects.filter(
+            status=Payment.StatusChoices.EXPIRED, borrowing__user=user
+        ).first()
+
+        if payment:
+            if payment.type == Payment.TypeChoices.PAYMENT:
+                days = payment.borrowing.get_borrowing_days()
+            else:
+                days = payment.borrowing.get_overdue_days()
+
+            new_session = create_stripe_session(
+                payment.borrowing, request, payment.type, payment.money_to_pay, days
+            )
+
+            payment.session_url = new_session.url
+            payment.session_id = new_session.id
+            payment.status = Payment.StatusChoices.PENDING
+            payment.save()
+
+            borrowing_data = BorrowingSerializer(payment.borrowing).data
+            return Response(
+                {
+                    "detail:": "Payment session renewed.",
+                    "id": payment.id,
+                    "new status": payment.status,
+                    "type": payment.type,
+                    "money to pay": payment.money_to_pay,
+                    "new session id": payment.session_id,
+                    "new session url": payment.session_url,
+                    "borrowing": borrowing_data,
+                }
+            )
+        return Response(
+            {"detail": "There is no expired payment session."},
+            status=status.HTTP_404_NOT_FOUND,
         )
