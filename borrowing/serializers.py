@@ -1,5 +1,6 @@
 from django.db.transaction import atomic
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from book.serializers import BookSerializer
 from borrowing.models import Borrowing
@@ -35,6 +36,31 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         data = super(BorrowingCreateSerializer, self).validate(attrs)
+
+        user = self.context["request"].user
+        pending_payment = Payment.objects.filter(
+            borrowing__user=user,
+            status__in=(
+                Payment.StatusChoices.PENDING,
+                Payment.StatusChoices.EXPIRED,
+            ),
+        ).first()
+
+        if pending_payment:
+            raise ValidationError(
+                {
+                    "You cannot borrow new books until pending/expired payment exist. "
+                    "Detail of your the payment:": [
+                        f"id: {pending_payment.id}",
+                        f"status: {pending_payment.status}",
+                        f"type: {pending_payment.type}",
+                        f"money to pay: {pending_payment.money_to_pay}",
+                        f"session id: {pending_payment.session_id}",
+                        f"session url: {pending_payment.session_url}",
+                        f"borrowing book: {pending_payment.borrowing.book}",
+                    ]
+                }
+            )
 
         Borrowing.validate_borrowing(
             attrs["book"].inventory, serializers.ValidationError
