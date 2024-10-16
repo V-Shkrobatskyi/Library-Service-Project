@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "borrowing",
     "django_celery_beat",
     "payment",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -149,6 +150,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
@@ -164,3 +166,10 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Library service API",
+    "DESCRIPTION": "Documentation for Library service API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
