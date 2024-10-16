@@ -91,9 +91,8 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
         ).first()
 
         if payment:
-            if payment.type == Payment.TypeChoices.PAYMENT:
-                days = payment.borrowing.get_borrowing_days()
-            else:
+            days = payment.borrowing.get_borrowing_days()
+            if payment.type == Payment.TypeChoices.FINE:
                 days = payment.borrowing.get_overdue_days()
 
             new_session = create_stripe_session(
