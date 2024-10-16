@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from borrowing.serializers import BorrowingSerializer
+from borrowing.telegram_notifications import send_message
 from payment.models import Payment
 from payment.serializers import (
     PaymentSerializer,
@@ -60,11 +61,22 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
                 "type": Payment.TypeChoices.PAYMENT,
             }
             serializer = self.get_serializer(payment, data=data)
-            borrowing = payment.borrowing
 
             if serializer.is_valid():
                 serializer.save()
-                borrowing.return_book()
+
+                message = (
+                    f"Successful payment:\n"
+                    f"${payment.money_to_pay} USD\n"
+                    f"Borrowing details:\n"
+                    f"book: {payment.borrowing.book} "
+                    f"user: {payment.borrowing.user}\n"
+                    f"borrow date: {payment.borrowing.borrow_date.date()}\n"
+                    f"expected return date: {
+                    payment.borrowing.expected_return_date.date()
+                    }"
+                )
+                send_message(message)
 
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
