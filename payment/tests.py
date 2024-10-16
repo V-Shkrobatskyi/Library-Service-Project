@@ -42,8 +42,13 @@ def sample_payment(user: get_user_model()) -> Payment:
     return Payment.objects.create(**defaults)
 
 
-def mocked_stripe_checkout_session_retrieve(session_id: str):
-    return {"status": "complete"}
+class MockedStripeCheckoutSessionRetrieve:
+    def __init__(self, session_id: str):
+        self.session_id = session_id
+
+    @staticmethod
+    def get(payment_status: str):
+        return "paid"
 
 
 class UnauthenticatedPaymentApiTests(TestCase):
@@ -103,7 +108,7 @@ class AuthenticatedUserPaymentTestView(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 
-    @patch("stripe.checkout.Session.retrieve", mocked_stripe_checkout_session_retrieve)
+    @patch("stripe.checkout.Session.retrieve", MockedStripeCheckoutSessionRetrieve)
     def test_auth_user_success_payment(self):
         payment = sample_payment(self.auth_user)
         query_params = {"session_id": payment.session_id}
@@ -115,7 +120,7 @@ class AuthenticatedUserPaymentTestView(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(updated_payment.status, Payment.StatusChoices.PAID)
 
-    @patch("stripe.checkout.Session.retrieve", mocked_stripe_checkout_session_retrieve)
+    @patch("stripe.checkout.Session.retrieve", MockedStripeCheckoutSessionRetrieve)
     def test_auth_user_success_payment_already_done(self):
         payment = sample_payment(self.auth_user)
         query_params = {"session_id": payment.session_id}

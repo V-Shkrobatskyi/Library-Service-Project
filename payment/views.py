@@ -54,7 +54,7 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
         )
         session = stripe.checkout.Session.retrieve(session_id)
 
-        if session["status"] == "complete":
+        if session.get("payment_status") == "paid":
             data = {
                 "status": Payment.StatusChoices.PAID,
                 "type": Payment.TypeChoices.PAYMENT,
