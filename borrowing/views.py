@@ -31,7 +31,10 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if is_active:
-            queryset = queryset.filter(actual_return_date__isnull=True)
+            if is_active.lower() == "true":
+                queryset = queryset.filter(actual_return_date__isnull=True)
+            if is_active.lower() == "false":
+                queryset = queryset.filter(actual_return_date__isnull=False)
 
         if user_id and user.is_staff:
             queryset = queryset.filter(user__id=user_id)
