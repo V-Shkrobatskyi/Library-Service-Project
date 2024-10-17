@@ -22,7 +22,6 @@ class BorrowingSerializer(serializers.ModelSerializer):
             "book",
             "user",
         )
-        read_only_fields = ("actual_return_date",)
 
 
 class BorrowingCreateSerializer(serializers.ModelSerializer):
