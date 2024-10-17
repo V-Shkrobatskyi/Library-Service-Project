@@ -1,9 +1,13 @@
 from datetime import datetime
+from decimal import Decimal
 
 from django.db import models
 
 from book.models import Book
 from library_service import settings
+
+
+FINE_MULTIPLIER = 2
 
 
 class Borrowing(models.Model):
@@ -22,7 +26,7 @@ class Borrowing(models.Model):
         return f"Borrowing book {self.book.title} by user {self.user} on {self.borrow_date})"
 
     @staticmethod
-    def book_borrowing(book):
+    def book_borrowing(book) -> None:
         book.inventory -= 1
         book.save()
 
@@ -40,8 +44,29 @@ class Borrowing(models.Model):
         self.clean()
         return super().save(*args, **kwargs)
 
-    def return_book(self):
+    def return_book(self) -> None:
         self.book.inventory += 1
         self.book.save()
         self.actual_return_date = datetime.today()
         self.save()
+
+    def get_borrowing_days(self) -> int:
+        last_date = self.expected_return_date.date()
+        first_date = self.borrow_date.date()
+
+        return (last_date - first_date).days
+
+    def get_price(self) -> Decimal:
+        return self.get_borrowing_days() * self.book.daily_fee
+
+    def get_overdue_days(self) -> int:
+        actual_return_date = self.actual_return_date.date()
+        expected_return_date = self.expected_return_date.date()
+
+        return (actual_return_date - expected_return_date).days
+
+    def get_overdue_price(self) -> Decimal:
+        daily_fee = self.book.daily_fee
+        fine_multiplier = Decimal(FINE_MULTIPLIER)
+
+        return self.get_overdue_days() * daily_fee * fine_multiplier
